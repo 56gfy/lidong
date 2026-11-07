@@ -194,12 +194,12 @@ function makeSprite(text,size){
   }
   /* 外发光：宽晕 ×2 */
   c.shadowColor='rgba(255,58,118,0.95)';
-  c.shadowBlur=size*0.45;
+  c.shadowBlur=size*0.70;
   c.fillStyle='#ff5c8d';
   c.fillText(text,mx,my);
   /* 中层光 */
   c.shadowColor='rgba(255,150,195,0.9)';
-  c.shadowBlur=size*0.16;
+  c.shadowBlur=size*0.28;
   c.fillStyle='#ffa8c6';
   c.fillText(text,mx,my);
   /* 亮核 */
@@ -363,7 +363,7 @@ function drawStatic(now){
   ctx.restore();
 
   /* 呼吸辉光：整体再叠一层加法光 */
-  GLOW=0.05+0.06*(0.5+0.5*Math.sin(t*2.4));
+  GLOW=0.10+0.10*(0.5+0.5*Math.sin(t*2.4));
   ctx.save();
   ctx.globalCompositeOperation='lighter';
   ctx.translate(W/2,CY);
@@ -506,7 +506,7 @@ function drawOrbit(now){
     var half=sp.w*sc/2, hhalf=sp.h*sc/2;
     sx=clamp(sx, half+6, W-half-6);
     sy=clamp(sy, hhalf+4, H-hhalf-4);
-    GLOW=0.96+0.06*(0.5+0.5*Math.sin(now*0.0018+o.ph));
+    GLOW=1.0+0.08*(0.5+0.5*Math.sin(now*0.0018+o.ph));
     blit(sp, sx, sy, sc, 0.55+0.45*pr);
   }
 }
