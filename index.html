@@ -194,12 +194,12 @@ function makeSprite(text,size){
   }
   /* 外发光：宽晕 ×2 */
   c.shadowColor='rgba(255,58,118,0.95)';
-  c.shadowBlur=size*0.62;
+  c.shadowBlur=size*0.45;
   c.fillStyle='#ff5c8d';
   c.fillText(text,mx,my);
   /* 中层光 */
   c.shadowColor='rgba(255,150,195,0.9)';
-  c.shadowBlur=size*0.26;
+  c.shadowBlur=size*0.16;
   c.fillStyle='#ffa8c6';
   c.fillText(text,mx,my);
   /* 亮核 */
@@ -288,7 +288,7 @@ function buildHeart(){
   }
   var total=arc[SAMP];
   var N=W<600?52:74;
-  var sizes=clamp(scx*1.35, 11, 24);
+  var sizes=clamp(W<600? scx*1.52 : scx*1.24, 11, 25);
   var DUR=5.0;
 
   for(var k=0;k<N;k++){
