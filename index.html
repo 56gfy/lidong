@@ -276,59 +276,61 @@ function buildHeart(){
   var cx=W/2, cy=CY;
   function map(p){ return {x:cx+p.x*scx, y:cy-(p.y+2.5)*scy}; }
 
-  var SAMP=1000, T0=Math.PI;
-  var pts=[], arc=[0];
-  for(var i=0;i<=SAMP;i++){
-    var t=T0+(i/SAMP)*Math.PI*2;
-    pts.push(map(raw(t)));
-    if(i>0){
-      var a=pts[i-1], b=pts[i];
-      arc.push(arc[i-1]+Math.hypot(b.x-a.x,b.y-a.y));
-    }
+  /* 轮廓多边形 + 包围范围 */
+  var SAMP=720, poly=[], yMin=1e9, yMax=-1e9;
+  for(var i=0;i<SAMP;i++){
+    var pp=map(raw(i/SAMP*Math.PI*2));
+    poly.push(pp); outlinePts.push(pp);
+    if(pp.y<yMin) yMin=pp.y;
+    if(pp.y>yMax) yMax=pp.y;
   }
-  var total=arc[SAMP];
-  var N=W<600?52:74;
-  var sizes=clamp(W<600? scx*1.52 : scx*1.24, 11, 25);
+  /* 落在心里面才算：射线法判点，避免"按交点配对"在窄处错位塌行 */
+  function inPoly(x,y){
+    var ins=false;
+    for(var a=0,b=poly.length-1;a<poly.length;b=a++){
+      var xi=poly[a].x, yi=poly[a].y, xj=poly[b].x, yj=poly[b].y;
+      if(((yi>y)!==(yj>y)) && (x < (xj-xi)*(y-yi)/(yj-yi)+xi)) ins=!ins;
+    }
+    return ins;
+  }
+  function edgeAt(y){
+    var first=null,last=null;
+    for(var xx=cx-400; xx<=cx+400; xx+=3){
+      if(inPoly(xx,y)){ if(first===null) first=xx; last=xx; }
+    }
+    return first===null?null:[first,last];
+  }
+
+  var size=clamp(scx*1.02, 9, 18);
+  var step=size*2.15;
+  var rowH=size*2.15;
+  var ROWS=Math.max(8, Math.round((yMax-yMin)/rowH));
+  var realRowH=(yMax-yMin)/ROWS;
   var DUR=5.0;
+  var idx=0;
 
-  for(var k=0;k<N;k++){
-    var target=total*(k/N);
-    var j=1;
-    while(j<arc.length && arc[j]<target) j++;
-    var p=pts[Math.min(j,SAMP)];
-    var prog=target/total;
-    var o={
-      x:p.x, y:p.y, size:sizes, delay:prog*DUR,
-      text:SEQ[k%SEQ.length],
-      rot:(Math.random()-0.5)*0.10, z:1
-    };
-    parts.push(o);
-    outlinePts.push({x:p.x,y:p.y,s:target});
-  }
-
-  /* 内部点缀：延迟取最近轮廓点的进度，保证仍是一笔画的感觉 */
-  var M=W<600?9:14;
-  for(var m=0;m<M;m++){
-    var tt=Math.random()*Math.PI*2;
-    var rr=0.18+Math.random()*0.52;
-    var q=raw(tt);
-    var ip=map({x:q.x*rr, y:(q.y+2.5)*rr-2.5});
-    var best=0,bd=1e9;
-    for(var z=0;z<outlinePts.length;z++){
-      var d=Math.hypot(outlinePts[z].x-ip.x, outlinePts[z].y-ip.y);
-      if(d<bd){bd=d;best=z;}
+  for(var r=0;r<ROWS;r++){
+    var yy=yMin+realRowH*(r+0.5);
+    var rowDelay=(ROWS-1-r)*(DUR/ROWS);
+    var eg=edgeAt(yy);
+    if(!eg) continue;
+    var w=eg[1]-eg[0];
+    var n=Math.max(1, Math.round(w/step));   /* 窄行也至少放一个字，心尖才不会空 */
+    var gap=w/n;
+    for(var k=0;k<=n;k++){
+      var px=eg[0]+k*gap;
+      if(!inPoly(px,yy)) continue;
+      parts.push({
+        x:px, y:yy, size:size,
+        text:SEQ[idx%SEQ.length],
+        delay:rowDelay+Math.random()*0.02,
+        rot:0, z:1
+      });
+      idx++;
     }
-    parts.push({
-      x:ip.x, y:ip.y, size:sizes*0.74,
-      delay:(outlinePts[best].s/total)*DUR+0.12,
-      text:SHORT[Math.floor(Math.random()*SHORT.length)],
-      rot:(Math.random()-0.5)*0.2, z:0
-    });
   }
 
-  /* 预渲染所需贴图 */
-  for(var s=0;s<parts.length;s++) makeSprite(parts[s].text, Math.round(parts[s].size));
-
+  for(var s2=0;s2<parts.length;s2++) makeSprite(parts[s2].text, Math.round(parts[s2].size));
   buildEnd=DUR+0.9;
 }
 
@@ -336,7 +338,7 @@ function buildHeart(){
 function drawBuilding(el){
   for(var i=0;i<parts.length;i++){
     var p=parts[i];
-    var prog=(el-p.delay)/0.42;
+    var prog=(el-p.delay)/0.26;
     if(prog<=0) continue;
     var e=clamp(prog,0,1);
     var ease=1-Math.pow(1-e,3);
